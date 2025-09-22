@@ -121,13 +121,13 @@ if (!keyData || keyData.status !== 200) {
         break;
       }
       case "noveltoon": {
-        if (!q || !url) {
-          return res.status(400).json({
-            status: 400,
-            author: "Yudzxml",
-            error: "Parameter q atau url wajib untuk noveltoon",
-          });
-        }
+        if (!q && !url) {
+  return res.status(400).json({
+    status: 400,
+    author: "Yudzxml",
+    error: "Parameter q atau url wajib untuk noveltoon",
+  });
+}
         const query = url || q;
         result = await noveltoon(query);
         break;
