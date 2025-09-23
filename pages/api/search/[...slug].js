@@ -29,10 +29,11 @@ import genshinchart from "../../../lib/genshinchart.js";
 import resep from "../../../lib/resep.js";
 import brave from "../../../lib/brave.js";
 import lirik from "../../../lib/lirik.js";
+import animeindo from "../../../lib/animeindo.js";
 
 export default async function handler(req, res) {
   const { slug = [] } = req.query;
-  const { q, page = 1, genre, url, tipe = "manga", action, popular, ongoing, chapter, download, apikey } = req.query;
+  const { q, page = 1, genre, url, tipe = "manga", type, action, popular, ongoing, chapter, download, apikey } = req.query;
 
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
@@ -76,6 +77,69 @@ if (!keyData || keyData.status !== 200) {
 }
   
     switch (slug[0]) {
+      case "animeindo": {
+  try {
+    const pageNum = parseInt(page) || 1;
+    const contentType = tipe || "manga";
+
+    if (!action) {
+      return res.status(400).json({ status: 400, author: "Yudzxml", error: "Action wajib diisi" });
+    }
+
+    let result;
+
+    switch (action) {
+      case "search":
+        if (!q) {
+          return res.status(400).json({ status: 400, author: "Yudzxml", error: "Parameter q wajib untuk search" });
+        }
+        result = await animeindo.search(q);
+        break;
+
+      case "home":
+        result = await animeindo.home(pageNum);
+        break;
+
+      case "detail":
+        if (!url) {
+          return res.status(400).json({ status: 400, author: "Yudzxml", error: "Parameter url wajib untuk detail" });
+        }
+        result = await animeindo.detail(url);
+        break;
+
+      case "genre":
+        if (!type) {
+          return res.status(400).json({ status: 400, author: "Yudzxml", error: "Parameter type wajib untuk search genre" });
+        }
+        result = await animeindo.genre(type, pageNum);
+        break;
+
+      case "stream":
+        if (!url) {
+          return res.status(400).json({ status: 400, author: "Yudzxml", error: "Parameter url wajib untuk stream" });
+        }
+        result = await animeindo.stream(url);
+        break;
+
+      default:
+        return res.status(400).json({ status: 400, author: "Yudzxml", error: "Action tidak valid" });
+    }
+
+    return res.status(200).json({
+      status: 200,
+      author: "Yudzxml",
+      data: result
+    });
+
+  } catch (err) {
+    return res.status(500).json({
+      status: 500,
+      author: "Yudzxml",
+      error: err?.message || err,
+    });
+  }
+  break;
+}
       case "lirik": {
         if (!q) {
           return res.status(400).json({
