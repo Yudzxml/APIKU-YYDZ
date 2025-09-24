@@ -1,12 +1,14 @@
 import {
   ADMIN_APIKEY,
   getKeysFromMongo,
-  getApiKey,
   saveKeyToMongo,
   deleteKeyFromMongo,
-  formatDate
-} from '../../../lib/apikeys.js';
-import runSpeedTest from '../../../lib/system.js';
+  formatDate,
+  registerUser,
+  loginUser,
+  editUser
+} from "../../../lib/apikeys.js";
+import runSpeedTest from "../../../lib/system.js";
 
 export default async function handler(req, res) {
   const { slug = [] } = req.query;
@@ -14,12 +16,10 @@ export default async function handler(req, res) {
   const xapikey = req.headers["x-apikey"];
 
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-apikey");
 
   if (req.method === "OPTIONS") return res.status(204).end();
-  if (req.method !== "GET") return res.status(405).json({ error: "Method Not Allowed" });
-  if (!key) return res.status(400).json({ status: 400, error: "Parameter 'key' wajib diisi" });
 
   const action = slug[0];
   const adminActions = ["addapikey", "editapikey", "delapikey"];
@@ -31,85 +31,95 @@ export default async function handler(req, res) {
   }
 
   const actionsMap = {
-  addapikey: async () => {
-    const keys = await getKeysFromMongo();
-    const exists = keys.find(k => k.key === key);
-    if (exists) throw { status: 400, message: "Key sudah ada di database" };
+    register: async () => {
+      if (req.method !== "POST") throw { status: 405, message: "Gunakan POST untuk register" };
+      const { email, password, deviceId } = req.body;
+      return await registerUser({ email, password, deviceId });
+    },
 
-    const now = Date.now();
-    const expireDate = expireDays
-      ? now + parseInt(expireDays) * 24 * 60 * 60 * 1000
-      : null;
+    login: async () => {
+      if (req.method !== "POST") throw { status: 405, message: "Gunakan POST untuk login" };
+      const { email, password } = req.body;
+      return await loginUser({ email, password });
+    },
 
-    const keyData = {
-      key,
-      limit: parseInt(limit),
-      initlimit: parseInt(limit),
-      lastreset: now,
-      reset: Boolean(reset),
-      expire: expireDate
-    };
+    edituser: async () => {
+      if (req.method !== "POST") throw { status: 405, message: "Gunakan POST untuk edituser" };
+      const { email, role = "user", ...update } = req.body;
+      return await editUser(email, update, role);
+    },
 
-    await saveKeyToMongo(key, keyData);
-    return keyData;
-  },
+    // === GET actions ===
+    addapikey: async () => {
+      if (!key) throw { status: 400, message: "Parameter 'key' wajib diisi" };
+      const keys = await getKeysFromMongo();
+      const exists = keys.find((k) => k.key === key);
+      if (exists) throw { status: 400, message: "Key sudah ada di database" };
 
-  delapikey: async () => {
-    const success = await deleteKeyFromMongo(key);
-    if (!success) throw { status: 404, message: "Key tidak ditemukan" };
-    return { message: "API key berhasil dihapus" };
-  },
-
-  editapikey: async () => {
-    const keys = await getKeysFromMongo();
-    const found = keys.find(k => k.key === key);
-    if (!found) throw { status: 404, message: "Key tidak ditemukan" };
-
-    const newLimit = limit ? parseInt(limit) : found.limit;
-    let newExpire = found.expire;
-
-    if (expireDays) {
       const now = Date.now();
-      const additionalMs = parseInt(expireDays) * 24 * 60 * 60 * 1000;
-      newExpire = !newExpire || newExpire < now
-        ? now + additionalMs
-        : newExpire + additionalMs;
-    }
+      const expireDate = expireDays
+        ? now + parseInt(expireDays) * 24 * 60 * 60 * 1000
+        : null;
 
-    const updatedData = {
-      ...found,
-      limit: newLimit,
-      expire: newExpire
-    };
+      const keyData = {
+        key,
+        limit: parseInt(limit),
+        initlimit: parseInt(limit),
+        lastreset: now,
+        reset: Boolean(reset),
+        expire: expireDate,
+      };
 
-    await saveKeyToMongo(key, updatedData);
-    return { key, limit: newLimit, expire: formatDate(newExpire) };
-  },
+      await saveKeyToMongo(key, keyData);
+      return keyData;
+    },
 
-  checkapikey: async () => {
-    if (!key) throw { status: 400, message: "parameter 'key' wajib untuk cekapikey" };
+    delapikey: async () => {
+      if (!key) throw { status: 400, message: "Parameter 'key' wajib diisi" };
+      const success = await deleteKeyFromMongo(key);
+      if (!success) throw { status: 404, message: "Key tidak ditemukan" };
+      return { message: "API key berhasil dihapus" };
+    },
 
-    const keys = await getKeysFromMongo();
-    const found = keys.find(k => k.key === key);
-    if (!found) throw { status: 404, message: "invalid Apikeys" };
+    editapikey: async () => {
+      if (!key) throw { status: 400, message: "Parameter 'key' wajib diisi" };
+      const keys = await getKeysFromMongo();
+      const found = keys.find((k) => k.key === key);
+      if (!found) throw { status: 404, message: "Key tidak ditemukan" };
 
-    return {
-      key: found.key,
-      limit: found.limit,
-      expired: formatDate(found.expire)
-    };
-  },
-  
-  status: async () => {
-    return await runSpeedTest()
-  }
-};
+      const newLimit = limit ? parseInt(limit) : found.limit;
+      let newExpire = found.expire;
+
+      if (expireDays) {
+        const now = Date.now();
+        const additionalMs = parseInt(expireDays) * 24 * 60 * 60 * 1000;
+        newExpire = !newExpire || newExpire < now
+          ? now + additionalMs
+          : newExpire + additionalMs;
+      }
+
+      const updatedData = { ...found, limit: newLimit, expire: newExpire };
+      await saveKeyToMongo(key, updatedData);
+      return { key, limit: newLimit, expire: formatDate(newExpire) };
+    },
+
+    checkapikey: async () => {
+      if (!key) throw { status: 400, message: "Parameter 'key' wajib diisi" };
+      const keys = await getKeysFromMongo();
+      const found = keys.find((k) => k.key === key);
+      if (!found) throw { status: 404, message: "invalid Apikeys" };
+      return { key: found.key, limit: found.limit, expired: formatDate(found.expire) };
+    },
+
+    status: async () => await runSpeedTest(),
+  };
+
   try {
     if (!actionsMap[action]) {
       return res.status(400).json({
         status: 400,
         author: "Yudzxml",
-        error: "Action tidak valid. Gunakan addapikey, delapikey, checkapikey, editapikey"
+        error: "Action tidak valid",
       });
     }
 
@@ -119,7 +129,7 @@ export default async function handler(req, res) {
     return res.status(err.status || 500).json({
       status: err.status || 500,
       author: "Yudzxml",
-      error: err.message || "Terjadi kesalahan"
+      error: err.message || "Terjadi kesalahan",
     });
   }
 }
