@@ -1496,7 +1496,7 @@
   {
     "name": "Unban Request (Email)",
     "desc": "Mengirimkan permintaan unban melalui email. Terima nomor target, kirim email ke tim whatsapp.",
-    "path": "/api/tools/unban?number=apikey=",
+    "path": "/api/tools/unban?number=&apikey=",
     "status": "ready",
     "params": {
       "number": "Nomor yang akan diajukan unban (format internasional, mis. +628123456789).",
