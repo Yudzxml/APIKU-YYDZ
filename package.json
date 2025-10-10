@@ -1,0 +1,39 @@
+{
+  "name": "YUDZXML-API",
+  "version": "1.0.0",
+  "description": "API MULTI V1 BY YUDZXML",
+  "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "axios": "^0.30.1",
+    "axios-cookiejar-support": "^5.0.5",
+    "btch-downloader": "^2.3.2",
+    "cheerio": "^1.0.0",
+    "dhn-api": "^1.1.3",
+    "file-type": "^21.0.0",
+    "form-data": "^4.0.0",
+    "got": "^11.8.6",
+    "https-proxy-agent": "^7.0.6",
+    "mongodb": "^6.19.0",
+    "next": "^13.5.10",
+    "qs": "^6.13.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "genshin-api": "2.3.0",
+    "serpapi": "^2.2.1",
+    "jszip": "3.10.1",
+    "uuid": "^13.0.0",
+    "bcryptjs": "3.0.1",
+    "nodemailer": "^6.10.1",
+    "tough-cookie": "^5.0.0"
+  },
+  "author": "Yudzxml",
+  "license": "MIT"
+}
