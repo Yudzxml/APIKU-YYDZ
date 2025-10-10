@@ -31,7 +31,7 @@
       {
       "name": "Check Apikey",
       "desc": "cek masa aktif api dan limit",
-      "path": "/api/user/checkapikey?apikey=",
+      "path": "/api/user/cekapikey?apikey=",
       "status": "ready",
       "params": {
         "apikey": "Masukkan API key kamu"
