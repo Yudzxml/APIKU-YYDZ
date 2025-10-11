@@ -8,6 +8,7 @@ import {
   editUser,
   loginUser,
   registerUser,
+  checkEmailAndDevice,
   ADMIN_APIKEY
 } from "../../../lib/apikeys.js";
 import runSpeedTest from "../../../lib/system.js";
@@ -85,6 +86,12 @@ export default async function handler(req, res) {
       case "getuserinfo": {
         const { email, deviceId } = query;
         result = await getUserInfo({ email, deviceId });
+        break;
+      }
+      
+      case "cekemail": {
+        const { email, deviceId } = query;
+        result = await checkEmailAndDevice({ email, deviceId });
         break;
       }
 
